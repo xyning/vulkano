@@ -183,7 +183,7 @@ fn main() {
             &queue,
             SurfaceTransform::Identity,
             alpha,
-            PresentMode::Fifo,
+            PresentMode::Immediate,
             FullscreenExclusive::Default,
             true,
             ColorSpace::SrgbNonLinear,
@@ -236,8 +236,12 @@ fn main() {
 
 				layout(location = 0) in vec2 position;
 
+                layout(push_constant) uniform PC {
+                    float scale;
+                } pc;
+
 				void main() {
-					gl_Position = vec4(position, 0.0, 1.0);
+					gl_Position = vec4(position * pc.scale, 0.0, 1.0);
 				}
 			"
         }
@@ -476,7 +480,7 @@ fn main() {
                         &dynamic_state,
                         vertex_buffer.clone(),
                         (),
-                        (),
+                        (1.5f32),
                         vec![],
                     )
                     .unwrap()

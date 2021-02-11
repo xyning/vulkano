@@ -32,7 +32,7 @@ use vulkano::device::DeviceExtensions;
 use vulkano::format::Format;
 use vulkano::framebuffer::{Framebuffer, FramebufferAbstract, RenderPassAbstract, Subpass};
 use vulkano::image::{ImageUsage, SwapchainImage};
-use vulkano::instance::Instance;
+use vulkano::instance::{Instance, InstanceExtensions};
 use vulkano::pipeline::shader::{
     GraphicsShaderType, ShaderInterfaceDef, ShaderInterfaceDefEntry, ShaderModule,
 };
@@ -67,8 +67,19 @@ pub struct Vertex {
 vulkano::impl_vertex!(Vertex, position, color);
 
 fn main() {
-    let required_extensions = vulkano_win::required_extensions();
-    let instance = Instance::new(None, &required_extensions, None).unwrap();
+    let validation = true;
+
+    let instance= if validation {
+        let extensions = InstanceExtensions {
+            ext_debug_utils: true,
+            ..vulkano_win::required_extensions()
+        };
+        let layers = vec!["VK_LAYER_KHRONOS_validation"];
+        Instance::new(None, &extensions, layers).unwrap()
+    } else {
+        Instance::new(None, &vulkano_win::required_extensions(), vec![]).unwrap()
+    };
+
     let physical = vk::instance::PhysicalDevice::enumerate(&instance)
         .next()
         .unwrap();
@@ -114,7 +125,7 @@ fn main() {
             &queue,
             SurfaceTransform::Identity,
             alpha,
-            PresentMode::Fifo,
+            PresentMode::Immediate,
             FullscreenExclusive::Default,
             true,
             ColorSpace::SrgbNonLinear,
@@ -272,11 +283,19 @@ fn main() {
         }
         // Number of push constants ranges (think: number of push constants).
         fn num_push_constants_ranges(&self) -> usize {
-            0
+            1
         }
         // Each push constant range in memory.
-        fn push_constants_range(&self, _num: usize) -> Option<PipelineLayoutDescPcRange> {
-            None
+        fn push_constants_range(&self, num: usize) -> Option<PipelineLayoutDescPcRange> {
+            if num > 0 {
+                None
+            } else {
+                Some(PipelineLayoutDescPcRange {
+                    offset: 0,
+                    size: 4,
+                    stages: self.0,
+                })
+            }
         }
     }
 
@@ -530,7 +549,7 @@ fn main() {
                     &dynamic_state,
                     vertex_buffer.clone(),
                     (),
-                    (),
+                    (1.25f32),
                     vec![],
                 )
                 .unwrap()
