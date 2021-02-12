@@ -120,7 +120,11 @@ pub(super) fn write_descriptor_sets(doc: &Spirv, types_meta: &TypesMeta) -> Toke
             Some(PipelineLayoutDescPcRange {
                 offset: 0,                   // FIXME: not necessarily true
                 size: #push_constants_size,
-                stages: ShaderStages::all(), // FIXME: wrong
+                stages: if self.0.compute {
+                        ShaderStages::compute()
+                    } else {
+                        ShaderStages::all_graphics()
+                    }, // FIXME: wrong
             })
         }
     );
